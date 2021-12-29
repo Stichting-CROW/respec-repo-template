@@ -1,0 +1,38 @@
+name: Get next publication stage
+description: Get the next publication stage for a document of a certain type, in a certain track.
+
+inputs:
+  present-stage:
+    description: Present stage of document
+    required: true
+  config-json:
+    default: https://docs.crow.nl/api/respec-types/specstatus.json
+    required: false
+outputs:
+  next-stage:
+    description: String for the next stage
+
+  # genereer tags o.b.v. {{DOCUMENT_LIFECYCLCE_STADIUM}}
+  # shortName@{{DOCUMENT_LIFECYCLCE_STADIUM}}-{{date}}
+  # shortName@{{DOCUMENT_LIFECYCLCE_STADIUM}}
+  # shortName@werkversie
+
+steps:
+  - name: Run a multi-line script
+    run: |
+      jq .{{PRESENT_STAGE}} {{CONFIG_JSON}}
+      if [ $? -ne 0 ]; then echo "Not a recognized specStatus" 1>&2; exit 1 fi
+
+      TRACK=`jq ".{{PRESENT_STAGE}} | .track" {{CONFIG_JSON}}`
+      ALL_IN_TRACK=`jq '.[] | select(.track = $TRACK)' {{CONFIG_JSON}}`
+
+
+      respec --src docs/shortName/index.html --out
+
+    ## maak onbewerkbaar door CODEOWNERS? Door
+
+  - name: Deploy 🚀
+    uses: JamesIves/github-pages-deploy-action@4.0.0
+    with:
+      branch: dist # The branch the action should deploy to.
+      folder: builds # The folder the action should deploy.
