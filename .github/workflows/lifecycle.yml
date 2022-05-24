@@ -1,0 +1,47 @@
+name: CI
+on:
+  workflow_dispatch:
+    inputs:
+      documentShortName:
+        description: "Name of the folder inside `docs`"
+        required: true
+      nextLifecyclePhase:
+        description: "Next lifecycle phase, cf. <http://docs.crow.nl/respec-design/stichting-crow/#specstatus-formal>"
+        required: true
+        default: "DEF"
+        type: choice
+        options:
+          - "CR"
+          - "PR"
+          - "OR"
+          - "DEF"
+          - "REPL"
+          - "RESC"
+          - "RQR"
+      reviewDateEnd:
+        description: "Review comments accepted through date (provide: '2020-02-15')"
+        required: false
+      hypothesisComments:
+        description: "Allow review comments through Hypothes.is"
+        required: false
+        type: boolean
+      emailComments:
+        description: "Allow review comments through e-mail (provide: e-mail address)."
+        required: false
+      prevVersion:
+        description: "Link to previous lifecycle (non-draft) (provide: URL link)"
+        required: false
+jobs:
+  main:
+    name: Build, Validate and Deploy
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - run: echo "TODAY=$(date +%Y%m%d)" >> $GITHUB_ENV
+      - run: echo "TODAY=$(date +%Y%m%d)" >> $GITHUB_ENV
+      # docs.crow.nl/imbor/v/im@DEF-2020-02-15/index.html
+      - uses: w3c/spec-prod@v2
+        with:
+          SOURCE: docs/${{ env.INPUT_DOCUMENTSHORTNAME }}
+          DESTINATION: docs/v/${{ env.INPUT_DOCUMENTSHORTNAME }}@${{ env.INPUT_NEXTLIFECYCLEPHASE }}-${{ env.TODAY }}
+          GH_PAGES_BRANCH: gh-pages
