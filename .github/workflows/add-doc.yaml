@@ -1,0 +1,96 @@
+name: Nieuw document toevoegen
+
+on:
+  workflow_dispatch:
+    inputs:
+      documentShortName:
+        description: "Document short name (name of the folder inside `docs`)"
+        required: true
+      documentTitle:
+        description: "Document title"
+        required: false
+        default: "Informatiemodel van ... voor ..."
+      documentType:
+        description: "Document type (specType, free text)"
+        required: false
+        default: "technische documentatie"
+      onReviewTrack:
+        description: "Will this document be formally reviewed?"
+        type: boolean
+        required: false
+
+env:
+  DOCS_HOME: "https://docs.crow.nl"
+
+permissions:
+  contents: write
+
+jobs:
+  setup-repo:
+    if: ${{ github.repository != 'stichting-crow/respec-template' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get code 🛂
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - name: Assert short name standards 🛂
+        run: |
+          echo 'DOC_SHORT_NAME=$(echo "${{ github.event.inputs.documentShortName }}" | tr '[:upper:]' '[:lower:]' | tr -c a-z0-9 - | sed 's/--\+/-/g;s/^-\+//;s/-\+$$//')' >> $GITHUB_ENV
+
+      - name: Calculate variables 🛂
+        run: |
+          echo "REPO_NAME=$(echo '${{ github.repository }}' | cut -d'/' -f2 )" >> $GITHUB_ENV
+
+      - name: Install cookiecutter 🍪
+        run: pip3 install cookiecutter
+
+      - name: Rebuild contents using cookiecutter 👷‍♀️
+        run: |
+          # Run cookiecutter
+          pushd /tmp
+          cookiecutter gh:stichting-crow/respec-document-template --no-input \
+            document_short_name=$DOC_SHORT_NAME \
+            repository_name=$REPO_NAME \
+            document_title="${{ github.event.inputs.documentTitle }}" \
+            first_editor="${{ github.actor }}" \
+            on_review_track=${{ github.event.inputs.onReviewTrack }}
+
+          popd
+          # Move generated content to root directory of repo
+          mkdir docs
+          mv /tmp/$DOC_SHORT_NAME/* docs/
+
+      - name: Calculate destination 🏖
+        run: |
+          echo "LIVE_URL=$DOCS_HOME/$REPO_NAME/$DOC_SHORT_NAME" >> $GITHUB_ENV
+
+      - name: Report to log 😎
+        run: |
+          echo "| Status                | Waarde       |" >> $GITHUB_STEP_SUMMARY
+          echo "| --------------------- | ------------ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Begin met werken in:  | 🎁 `docs/$REPO_NAME/$DOC_SHORT_NAME` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Werkdocument live op: | 🟡 $LIVE_URL |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Push new document to repo 🚀
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: |
+            Initialize new ReSpec repository
+
+            Reason: run setup.yaml after clone by ${{ github.actor }}
+
+
+            Co-authored-by: stichting-crow-klusjesbot <84876605+stichting-crow-klusjesbot@users.noreply.github.com>
+          commit_user_name: stichting-crow-klusjesbot
+          commit_user_email: 84876605+stichting-crow-klusjesbot@users.noreply.github.com
+
+      - name: Notify docs.crow.nl 🔔
+        run: |
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/stichting-crow/stichting-crow.github.io/dispatches \
+            -d '{"event_type":"respec-register-new-document","client_payload":{"repo":"$REPO_NAME","doc":"$DOC_SHORT_NAME","url":"$LIVE_URL"}}'
