@@ -1,6 +1,7 @@
 name: Werkversie publiceren
 
 on:
+  workflow_call:
   push:
     branches:
       - main
@@ -10,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    if: ${{ github.repository != 'stichting-crow/respec-repo-template' }}
+    if: ${{ github.repository != 'Stichting-CROW/respec-repo-template' }}
     runs-on: ubuntu-latest
     steps:
       - name: Get code 🛂

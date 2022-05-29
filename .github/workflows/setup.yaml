@@ -12,13 +12,13 @@ permissions:
 
 jobs:
   setup-repo:
-    if: ${{ github.repository != 'stichting-crow/respec-repo-template' }}
+    if: ${{ github.repository != 'Stichting-CROW/respec-repo-template' }}
     runs-on: ubuntu-latest
     steps:
       - name: Get code 🛂
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           ref: ${{ github.head_ref }}
 
       - name: Calculate variables 🛂
@@ -76,17 +76,13 @@ jobs:
           mv /tmp/$REPO_NAME/* docs/
           # Delete the setup.yml workflow, it has served its purpose
           rm .github/workflows/setup.yml
+          # Replace the template README with the repo README
+          rm README.md
+          mv README_AFTER_CLONE.md README.md
 
       - name: Calculate destination 🏖
         run: |
           echo "LIVE_URL=$DOCS_HOME/$REPO_NAME/$REPO_NAME" >> $GITHUB_ENV
-
-      - name: Report to log 😎
-        run: |
-          echo "| Status                | Waarde       |" >> $GITHUB_STEP_SUMMARY
-          echo "| --------------------- | ------------ |" >> $GITHUB_STEP_SUMMARY
-          echo "| Begin met werken in:  | 🎁 `docs/$REPO_NAME/$REPO_NAME` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Werkdocument live op: | 🟡 $LIVE_URL |" >> $GITHUB_STEP_SUMMARY
 
       - name: Force push new repo contents 🚀
         uses: stefanzweifel/git-auto-commit-action@v4
@@ -102,10 +98,36 @@ jobs:
           commit_user_email: 84876605+stichting-crow-klusjesbot@users.noreply.github.com
           push_options: --force
 
+      - name: Start GitHub Pages 🌍
+        run: |
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/pages \
+            -d '{"source":{"branch":"main","path":"/docs"}}'
+          curl \
+            -X PUT \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/pages \
+            -d '{"https_enforced":true}'
+
       - name: Notify docs.crow.nl 🔔
         run: |
           curl \
             -X POST \
             -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.NOTIFY_DOCS_CROW_NL }}" \
             https://api.github.com/repos/stichting-crow/stichting-crow.github.io/dispatches \
             -d '{"event_type":"respec-register-new-repository","client_payload":{"repo":"$REPO_NAME","doc":"$REPO_NAME","url":"$LIVE_URL"}}'
+
+      - name: Start auto-publishing for the first run
+        uses: ./.github/workflows/auto-publish.yaml
+
+      - name: Report to log 😎
+        run: |
+          echo "| Status                | Waarde       |" >> $GITHUB_STEP_SUMMARY
+          echo "| --------------------- | ------------ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Begin met werken in:  | 🎁 `docs/$REPO_NAME/$REPO_NAME` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Werkdocument live op: | 🟡 $LIVE_URL |" >> $GITHUB_STEP_SUMMARY

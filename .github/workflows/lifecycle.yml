@@ -91,5 +91,6 @@ jobs:
           curl \
             -X POST \
             -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.NOTIFY_DOCS_CROW_NL }}" \
             https://api.github.com/repos/stichting-crow/stichting-crow.github.io/dispatches \
             -d '{"event_type":"respec-register-new-document-version","client_payload":{"repo":"$REPO_NAME","doc":"${{ github.event.inputs.documentShortName }}","url":"$LIVE_URL"}}'

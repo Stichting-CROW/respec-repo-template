@@ -27,7 +27,7 @@ permissions:
 
 jobs:
   setup-repo:
-    if: ${{ github.repository != 'stichting-crow/respec-template' }}
+    if: ${{ github.repository != 'Stichting-CROW/respec-repo-template' }}
     runs-on: ubuntu-latest
     steps:
       - name: Get code 🛂
@@ -92,5 +92,6 @@ jobs:
           curl \
             -X POST \
             -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.NOTIFY_DOCS_CROW_NL }}" \
             https://api.github.com/repos/stichting-crow/stichting-crow.github.io/dispatches \
             -d '{"event_type":"respec-register-new-document","client_payload":{"repo":"$REPO_NAME","doc":"$DOC_SHORT_NAME","url":"$LIVE_URL"}}'
