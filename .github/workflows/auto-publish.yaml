@@ -1,0 +1,32 @@
+name: Werkversie publiceren
+
+on:
+  workflow_call:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: ${{ github.repository != 'Stichting-CROW/respec-repo-template' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get code 🛂
+        uses: actions/checkout@v2
+
+      - name: Deploy live view 🚀
+        uses: JamesIves/github-pages-deploy-action@v4.3.3
+        with:
+          branch: gh-pages # The branch the action should deploy to.
+          folder: docs # The folder the action should deploy.
+          force: false
+          commit-message: |
+            Deploying to docs.crow.nl from @ ${{ github.env.GITHUB_SHA}}
+
+            Reason: After push by ${{ github.actor }}
+
+
+            Co-authored-by: stichting-crow-klusjesbot <84876605+stichting-crow-klusjesbot@users.noreply.github.com>

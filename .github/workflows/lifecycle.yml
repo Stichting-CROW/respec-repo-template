@@ -1,0 +1,96 @@
+name: Documentversie publiceren
+
+on:
+  workflow_dispatch:
+    inputs:
+      documentShortName:
+        description: "Document short name (name of the folder inside `docs`)"
+        required: true
+      nextLifecyclePhase:
+        description: "Publish with status (http://docs.crow.nl/respec-design/stichting-crow/#specstatus-formal)"
+        required: true
+        default: "DEF"
+        type: choice
+        options:
+          - "00-IR-In review"
+          - "00-DOC-Document"
+          - "30-CR-Committee review"
+          - "40-PR-Public review"
+          - "50-OR-Open review"
+          - "60-DEF-Approved"
+          - "95-REPL-Superceded"
+          - "95-RESC-Rescinded"
+          - "90-RQR-Requires review"
+      reviewDateEnd:
+        description: "Review comments accepted through date (provide: '2022-06-21')"
+        required: false
+      hypothesisComments:
+        description: "Allow review comments through Hypothes.is"
+        required: false
+        type: boolean
+      emailComments:
+        description: "Allow review comments through e-mail (provide: e-mail address)."
+        required: false
+      prevVersion:
+        description: "Link to previous lifecycle (non-draft) (provide: URL link)"
+        required: false
+
+env:
+  DOCS_HOME: "https://docs.crow.nl"
+
+permissions:
+  contents: write
+
+jobs:
+  main:
+    name: Build spec and push to gh-pages:v
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Get code 🛂
+        uses: actions/checkout@v2
+
+      - name: Save today's date 📅
+        run: |
+          echo "TODAY=$(date +%Y%m%d)" >> $GITHUB_ENV
+          echo "SPEC_STATUS=$(echo ${{ github.event.inputs.nextLifecyclePhase }} | cut -d'-' -f2)" >> $GITHUB_ENV
+          echo "REPO_NAME=$(echo '${{ github.repository }}' | cut -d'/' -f2 )" >> $GITHUB_ENV
+
+      - name: Calculate document title 🧾
+        run: |
+          echo "DOCUMENT_FULL_NAME=${{ github.event.inputs.documentShortName }}@$SPEC_STATUS-$TODAY" >> $GITHUB_ENV
+
+      - name: Calculate destination 🏖
+        run: |
+          echo "DESTINATION=$(docs/v/$DOCUMENT_FULL_NAME)" >> $GITHUB_ENV
+          echo "LIVE_URL=($DOCS_HOME/$REPO_NAME/v/$DOCUMENT_FULL_NAME)" >> $GITHUB_ENV
+
+      - name: Generate and deploy static view 🚀
+        uses: w3c/spec-prod@v2
+        with:
+          SOURCE: docs/${{ github.event.inputs.documentShortName }}
+          DESTINATION: ${{ env.DESTINATION }}
+          GH_PAGES_BRANCH: gh-pages
+          GH_PAGES_BUILD_OVERRIDE: |
+            specStatus: ${{ env.SPEC_STATUS }}
+            publishDate: ${{ env.TODAY }}
+            reviewDateEnd: ${{ github.event.inputs.reviewDateEnd }}
+            hypothesisComments: ${{ github.event.inputs.hypothesisComments }}
+            emailComments: ${{ github.event.inputs.emailComments }}
+            prevVersion: ${{ github.envent.inputs.prevVersion }}
+
+      - name: Report to log 😎
+        run: |
+          echo "| Status     | Waarde                   |" >> $GITHUB_STEP_SUMMARY
+          echo "| ---------- | ------------------------ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Document   | 🎁 `$DOCUMENT_FULL_NAME` |" >> $GITHUB_STEP_SUMMARY
+          echo "| `gh-pages` | 🚧 `$DESTINATION`        |" >> $GITHUB_STEP_SUMMARY
+          echo "| Live op:   | 🟢 $LIVE_URL             |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify docs.crow.nl 🔔
+        run: |
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.NOTIFY_DOCS_CROW_NL }}" \
+            https://api.github.com/repos/stichting-crow/stichting-crow.github.io/dispatches \
+            -d '{"event_type":"respec-register-new-document-version","client_payload":{"repo":"$REPO_NAME","doc":"${{ github.event.inputs.documentShortName }}","url":"$LIVE_URL"}}'

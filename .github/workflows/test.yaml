@@ -1,9 +1,0 @@
-on: 
-  push:
-  
-jobs:
-  test:
-    if: github.repository != 'stichting-crow/respec-repo-template'
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "${{ github.repository }}"
