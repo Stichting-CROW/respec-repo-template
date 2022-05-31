@@ -47,6 +47,10 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.repository != 'Stichting-CROW/respec-repo-template' }}
 
+    outputs:
+      docfilename: ${{ steps.output1.outputs.docfilename }}
+      destination: ${{ steps.output1.outputs.destination }}
+
     steps:
       - name: Get code 🛂
         uses: actions/checkout@v2
@@ -66,6 +70,12 @@ jobs:
         run: |
           echo "DESTINATION=docs/v/$DOCUMENT_FULL_NAME" >> $GITHUB_ENV
           echo "LIVE_URL=$DOCS_HOME/$REPO_NAME/v/$DOCUMENT_FULL_NAME" >> $GITHUB_ENV
+
+      - name: Set outputs
+        id: output1
+        run: |
+          echo "::set-output name=docfilename::$(echo $DOCUMENT_FULL_NAME)"
+          echo "::set-output name=destination::$(echo $DESTINATION)"
 
       - name: Generate archive 📦
         uses: w3c/spec-prod@v2
@@ -116,12 +126,19 @@ jobs:
           mkdir -p v/
           mv *.gh/docs/v/* v/
 
+      - name: Create PDF from HTML
+        uses: frnode/html-to-pdf-action@v1.0.1
+        with:
+          htmlFile: v/${{ needs.build.outputs.docfilename }}/index.html
+          outputFile: v/${{ needs.build.outputs.docfilename }}/${{ needs.build.outputs.docfilename }}.pdf
+          pdfOptions: '{"format": "A4", "scale": 0.9, "printBackground": true}'
+
       - name: Push new document to repo 🚀
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           branch: gh-pages
           create_branch: true
-          file_pattern: v/**
+          file_pattern: v/** # only v/, ignore the expanded zip
           commit_message: |
             doc: publish ${{ env.DOCUMENT_FULL_NAME }}
 
