@@ -5,10 +5,6 @@ on:
     branches:
       - main
 
-concurrency:
-  group: deploy
-  cancel-in-progress: true
-
 jobs:
   deploy:
     if: ${{ github.repository != 'Stichting-CROW/respec-repo-template' }}
@@ -18,7 +14,7 @@ jobs:
       contents: write
 
     steps:
-      - run: echo "noop"
+      - run: echo "ready for publication"
       # - name: Checkout 🛎️
       #   uses: actions/checkout@v3
 
