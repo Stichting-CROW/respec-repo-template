@@ -108,6 +108,7 @@ jobs:
   start-gh-pages:
     name: Configure repo settings
     runs-on: ubuntu-latest
+    if: ${{ github.repository != 'Stichting-CROW/respec-repo-template' }}
 
     permissions:
       pages: write
