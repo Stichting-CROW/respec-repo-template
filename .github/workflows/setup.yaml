@@ -89,6 +89,22 @@ jobs:
           rm README.md
           mv README_AFTER_CLONE.md README.md
 
+      - name: Save template version info
+        run: |
+          echo "stichting-crow/respec-repo-template@$(\
+            curl \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/stichting-crow/respec-repo-template/releases/latest \
+              | jq -r .tag_name \
+            )" >> .github/VERSION
+
+          echo "stichting-crow/respec-document-template@$(\
+            curl \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/stichting-crow/respec-document-template/releases/latest \
+              | jq -r .tag_name \
+            )" >> .github/VERSION
+
       - name: Push new repo contents 🚀
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
