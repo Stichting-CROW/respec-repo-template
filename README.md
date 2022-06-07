@@ -50,3 +50,24 @@ Dat duurt zo'n 30 seconden, waarna het lampje in de balk bovenin op groen spring
 [stichting-crow/respec-document-template]: https://github.com/stichting-crow/respec-document-template
 [stichting-crow/respec-repo-template]: https://github.com/stichting-crow/respec-repo-template
 [.github/workflows/setup.yaml]: .github/workflows/setup.yaml
+
+---
+
+# Documentation of the workings of `stichting-crow/respec-repo-template`
+
+This repository is set as a GitHub template repository.
+After clone in the interface, a `clone`-event is sent to the GitHub Actions in this repository and [`setup.yaml`](setup.yaml) triggers.
+That file will not run if the current repository is its base, preventing the automation from triggering before clone.
+
+[`setup.yaml`](setup.yaml) will then do the following:
+
+1. Setup the GitHub Pages branch (`gh-pages`) and enforce HTTPS.
+1. Run (with `cookiecutter`) the
+   [stichting-crow/respec-document-template](respec-document-template),
+   [stichting-crow/respec-workflows-template](respec-workflows-template)
+   templates.
+1. Save version info on the used templates in `.github/VERSION`.
+1. Overwrite the README with one [for the spec / spec editors](README_AFTER_CLONE.md).
+
+[respec-document-template]: https://github.com/stichting-crow/respec-document-template
+[respec-workflows-template]: https://github.com/Stichting-CROW/respec-workflows-template
