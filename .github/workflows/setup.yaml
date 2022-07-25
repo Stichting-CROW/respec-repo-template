@@ -72,7 +72,7 @@ jobs:
 
           popd
           # Move generated content to workflows directory of repo
-          mv /tmp/workflows .github/workflows/
+          mv /tmp/workflows/* .github/workflows/
 
       - name: Add first document 👩‍🍳
         env:
