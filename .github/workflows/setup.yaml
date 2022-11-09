@@ -19,7 +19,6 @@ jobs:
         with:
           fetch-depth: 1 # merely the last
           ref: ${{ github.head_ref }}
-          token: ${{ secrets.NEW_RESPEC_REPO_WORKFLOW }}
 
       - name: Calculate document metadata 🧾
         uses: actions/github-script@v4
